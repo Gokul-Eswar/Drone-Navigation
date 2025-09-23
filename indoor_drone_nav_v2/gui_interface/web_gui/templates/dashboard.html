@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Indoor Drone Navigation Control</title>
+    <link href="/static/css/dashboard.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="/static/js/dashboard.js"></script>
+</head>
+<body>
+    <div class="dashboard-container">
+        <!-- Header -->
+        <header class="dashboard-header">
+            <h1>🚁 Indoor Drone Navigation Control</h1>
+            <div class="connection-status" id="connection-status">
+                <span class="status-indicator offline"></span>
+                <span>Disconnected</span>
+            </div>
+        </header>
+
+        <!-- Main Dashboard -->
+        <div class="dashboard-main">
+            <!-- Left Panel - Controls -->
+            <div class="control-panel">
+                <div class="section">
+                    <h3>🎮 Manual Control</h3>
+                    <div class="control-buttons">
+                        <button id="takeoff-btn" class="btn btn-primary">Takeoff</button>
+                        <button id="land-btn" class="btn btn-secondary">Land</button>
+                        <button id="emergency-btn" class="btn btn-danger">EMERGENCY STOP</button>
+                    </div>
+                </div>
+
+                <div class="section">
+                    <h3>🗺️ Mission Planning</h3>
+                    <select id="mission-type">
+                        <option value="exploration">Exploration</option>
+                        <option value="inspection">Inspection</option>
+                        <option value="surveillance">Surveillance</option>
+                    </select>
+                    <button id="plan-mission-btn" class="btn btn-primary">Plan Mission</button>
+                    <button id="start-mission-btn" class="btn btn-success">Start Mission</button>
+                </div>
+
+                <div class="section">
+                    <h3>🛡️ Safety Status</h3>
+                    <div id="safety-alerts"></div>
+                </div>
+            </div>
+
+            <!-- Center Panel - Map View -->
+            <div class="map-panel">
+                <div id="map-container">
+                    <canvas id="map-canvas"></canvas>
+                    <div class="map-overlay">
+                        <div id="drone-position">Drone Position: (0, 0, 0)</div>
+                        <div id="mission-progress">Mission Progress: 0%</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Right Panel - Telemetry -->
+            <div class="telemetry-panel">
+                <div class="section">
+                    <h3>📊 Telemetry</h3>
+                    <div class="telemetry-grid">
+                        <div class="telemetry-item">
+                            <label>Battery:</label>
+                            <div class="progress-bar">
+                                <div id="battery-bar" class="progress-fill"></div>
+                            </div>
+                            <span id="battery-text">0%</span>
+                        </div>
+                        <div class="telemetry-item">
+                            <label>Altitude:</label>
+                            <span id="altitude">0.0 m</span>
+                        </div>
+                        <div class="telemetry-item">
+                            <label>Speed:</label>
+                            <span id="speed">0.0 m/s</span>
+                        </div>
+                        <div class="telemetry-item">
+                            <label>Flight Mode:</label>
+                            <span id="flight-mode">UNKNOWN</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="section">
+                    <h3>📈 Performance Metrics</h3>
+                    <canvas id="performance-chart"></canvas>
+                </div>
+
+                <div class="section">
+                    <h3>📋 Mission Log</h3>
+                    <div id="mission-log" class="log-container">
+                        <!-- Mission events will be populated here -->
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

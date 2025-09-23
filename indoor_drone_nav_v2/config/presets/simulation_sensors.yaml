@@ -1,0 +1,11 @@
+# Placeholder for simulation sensor configuration.
+sensors:
+  camera:
+    enabled: true
+    model: "sim_camera"
+  imu:
+    enabled: true
+    model: "sim_imu"
+  lidar:
+    enabled: true
+    model: "sim_lidar"

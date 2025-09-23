@@ -1,0 +1,6 @@
+# Placeholder for Desktop Dockerfile.
+# This would typically be based on a standard Ubuntu image
+# and install ROS2, dependencies, and the project code.
+FROM ubuntu:22.04
+
+RUN apt-get update && apt-get install -y git

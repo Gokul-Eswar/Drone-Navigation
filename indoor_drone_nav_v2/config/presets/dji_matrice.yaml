@@ -1,0 +1,5 @@
+# Placeholder for DJI Matrice configuration.
+drone:
+  type: "dji"
+  platform: "dji_matrice"
+  frame_type: "quadcopter"

@@ -1,0 +1,46 @@
+# For advanced users with full sensor suite
+drone:
+  type: "mavros"  # or "dji"
+  specifications:
+    mass: 3.0
+    max_velocity: 10.0
+    payload_capacity: 1.0
+
+sensors:
+  lidar:
+    enabled: true
+    type: "lidar"
+    model: "velodyne_vlp16"
+
+  camera:
+    enabled: true
+    type: "camera"
+    model: "zed2"
+
+  imu:
+    enabled: true
+    type: "imu"
+    model: "xsens_mti"
+
+  gps:
+    enabled: true  # for outdoor transitions
+    type: "gps"
+    model: "ublox_f9p"
+
+safety:
+  collision_avoidance:
+    enabled: true
+    algorithms: ["lidar_based", "vision_based", "predictive"]
+
+  redundancy:
+    enabled: true
+    backup_sensors: ["camera", "imu"]
+
+navigation:
+  slam:
+    algorithm: "multi_modal"
+    fusion: ["lidar", "visual", "inertial"]
+
+  path_planning:
+    algorithm: "rrt_star"
+    optimization: "trajectory_optimization"

@@ -1,0 +1,17 @@
+# Core
+numpy
+pyyaml
+pandas
+
+# FastAPI Web Server
+fastapi
+uvicorn[standard]
+websockets
+python-socketio
+
+# Testing
+pytest
+pytest-asyncio
+
+# Deployment
+docker

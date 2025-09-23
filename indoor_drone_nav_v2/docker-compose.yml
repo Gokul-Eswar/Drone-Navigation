@@ -1,0 +1,43 @@
+version: '3.8'
+
+services:
+  indoor_drone_nav:
+    build:
+      context: .
+      dockerfile: Docker/Dockerfile.desktop
+    volumes:
+      - ./config:/ws/config
+      - ./logs:/ws/logs
+      - ./maps:/ws/maps
+      - /dev:/dev  # For hardware access
+    privileged: true  # For hardware access
+    network_mode: host
+    environment:
+      - ROS_DOMAIN_ID=42
+      - DISPLAY=${DISPLAY}
+    ports:
+      - "8080:8080"  # Web GUI
+      - "9090:9090"  # ROSBridge
+
+  simulation:
+    build:
+      context: .
+      dockerfile: Docker/Dockerfile.simulation
+    volumes:
+      - ./gazebo_worlds:/ws/worlds
+    environment:
+      - GAZEBO_MODEL_PATH=/ws/models
+    ports:
+      - "11345:11345"  # Gazebo
+
+  monitoring:
+    image: grafana/grafana:latest
+    ports:
+      - "3000:3000"
+    volumes:
+      - grafana_data:/var/lib/grafana
+    environment:
+      - GF_SECURITY_ADMIN_PASSWORD=drone_admin
+
+volumes:
+  grafana_data:
