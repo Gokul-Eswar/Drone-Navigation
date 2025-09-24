@@ -45,21 +45,26 @@ def generate_launch_description():
         output='screen'
     )
 
-    # Cartographer SLAM
-    cartographer_config_dir = os.path.join(get_package_share_directory('indoor_drone_nav_v2'), 'config', 'slam')
-    cartographer_node = Node(
-        package='cartographer_ros',
-        executable='cartographer_node',
-        name='cartographer_node',
-        output='screen',
-        arguments=[
-            '-configuration_directory', cartographer_config_dir,
-            '-configuration_basename', 'cartographer.lua'
-        ],
-        remappings=[
-            ('scan', '/scan'),
-            ('imu', '/imu')
-        ]
+    # RTAB-Map SLAM
+    rtabmap_launch_file = os.path.join(
+        get_package_share_directory('indoor_drone_nav_v2'),
+        'launch',
+        'rtabmap.launch.py'
+    )
+
+    rtabmap_node = IncludeLaunchDescription(
+        PythonLaunchDescriptionSource(rtabmap_launch_file)
+    )
+
+    # Nav2 Stack
+    nav2_launch_file = os.path.join(
+        get_package_share_directory('indoor_drone_nav_v2'),
+        'launch',
+        'nav2.launch.py'
+    )
+
+    nav2_node = IncludeLaunchDescription(
+        PythonLaunchDescriptionSource(nav2_launch_file)
     )
 
     # Extended Kalman Filter for Sensor Fusion
@@ -78,7 +83,8 @@ def generate_launch_description():
         action_server_node,
         mission_executor_node,
         gui_server_node,
-        cartographer_node,
+        rtabmap_node,
+        nav2_node,
         ekf_node,
         # In a complete system, other nodes for SLAM, safety, etc., would be added here.
     ])

@@ -28,7 +28,9 @@ setup(
         (os.path.join('share', package_name, 'gui_interface/web_gui/static/css'), glob('gui_interface/web_gui/static/css/*.css')),
         (os.path.join('share', package_name, 'gui_interface/web_gui/static/js'), glob('gui_interface/web_gui/static/js/*.js')),
         # Install scripts
-        (os.path.join('lib', package_name), glob('scripts/*'))
+        (os.path.join('lib', package_name), glob('scripts/*')),
+        # Install test files
+        (os.path.join('share', package_name, 'testing_framework/integration_tests'), glob('testing_framework/integration_tests/*.py')),
 
     ],
     install_requires=['setuptools'],
@@ -44,6 +46,9 @@ setup(
             'drone_action_server_node = indoor_drone_nav_v2.drone_interfaces.drone_action_server_node:main',
             'gui_server_node = indoor_drone_nav_v2.gui_interface.mission_control_server:main',
             'mission_executor_node = indoor_drone_nav_v2.mission_planning.mission_executor_node:main',
+            'path_planner_node = indoor_drone_nav_v2.mission_planning.path_planner_node:main',
+            'object_detection_node = indoor_drone_nav_v2.ml_modules.object_detection_node:main',
+            'visual_servoing_node = indoor_drone_nav_v2.ml_modules.visual_servoing_node:main',
         ],
     },
 )

@@ -1,0 +1,8 @@
+# Goal
+geometry_msgs/PoseStamped goal_pose
+---
+# Result
+bool success
+---
+# Feedback
+# No feedback needed for this action

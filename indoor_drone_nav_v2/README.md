@@ -1,7 +1,7 @@
 # Indoor Drone Navigation System V2
 
 ## 🎯 Project Overview
-A comprehensive, production-ready indoor autonomous navigation system that works with any drone platform. This project is built on ROS2 and features a scalable microservice architecture, advanced SLAM capabilities (placeholder), intelligent mission planning, robust safety systems, and a professional web-based monitoring and control interface.
+A comprehensive, production-ready indoor autonomous navigation system that works with any drone platform. This project is built on ROS2 and features a scalable microservice architecture, advanced SLAM capabilities provided by `slam_toolbox`, intelligent mission planning, robust safety systems, and a professional web-based monitoring and control interface.
 
 ---
 
@@ -49,11 +49,10 @@ The system is designed as a set of communicating ROS2 nodes (microservices), pro
 This section provides details on the intended functionality of each major module in the `src/indoor_drone_nav_v2` directory.
 
 *   **`/core`**: Contains the fundamental, non-ROS-specific algorithms.
-    *   `slam_engine`: Placeholder for advanced SLAM algorithms (VIO, LIO).
     *   `path_planner`: Placeholder for global and local path planning algorithms.
 
 *   **`/drone_interfaces`**: The ROS2 layer for drone communication.
-    *   `state_aggregator_node.py`: Subscribes to MAVROS and publishes a clean `/indoor_drone/state`.
+    *   `state_aggregator_node.py`: Subscribes to various sensor topics and uses the TF2 tree to determine the drone's pose in the `map` frame. It publishes the aggregated `DroneState`.
     *   `drone_action_server_node.py`: Provides high-level ROS2 Actions for drone control.
     *   `mavros_interface.py`: A Python client library for easily interacting with the action servers.
 
@@ -145,8 +144,12 @@ This project includes a Docker-based deployment system for reproducibility.
 ## 💻 For Developers
 
 *   **Adding a new action:** Define a new `.action` file in the `/action` directory, add it to `CMakeLists.txt`, rebuild the workspace with `colcon build`, and then implement the server logic in `drone_action_server_node.py`.
-*   **Running Tests:** The unit tests are located in `/testing_framework/unit_tests`. You can run them with `pytest`:
-    ```bash
-    pytest testing_framework/unit_tests/
-    ```
-    *Note: Tests require a sourced ROS2 environment to find `rclpy`, but use mocking and do not require a live drone connection.*
+*   **Running Tests:** The testing framework includes unit and integration tests.
+    *   **Unit Tests:** Located in `/testing_framework/unit_tests`. Run with `pytest`:
+        ```bash
+        pytest testing_framework/unit_tests/
+        ```
+    *   **Integration Tests:** Located in `/testing_framework/integration_tests`. These tests launch the full system, so they are run using `colcon`:
+        ```bash
+        colcon test --packages-select indoor_drone_nav_v2
+        ```
