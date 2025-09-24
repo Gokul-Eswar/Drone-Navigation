@@ -1,0 +1,8 @@
+# Goal
+# No goal parameters needed
+---
+# Result
+bool success
+---
+# Feedback
+float32 current_altitude

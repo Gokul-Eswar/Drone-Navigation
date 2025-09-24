@@ -1,0 +1,33 @@
+safety:
+  collision_avoidance:
+    enabled: true
+    min_obstacle_distance: 1.0  # meters
+    prediction_horizon: 2.0  # seconds
+
+  human_detection:
+    enabled: true
+    min_safe_distance: 2.0  # meters
+    detection_confidence: 0.8
+
+  battery_monitoring:
+    enabled: true
+    low_battery_threshold: 30  # percentage
+    critical_battery_threshold: 15  # percentage
+    auto_return_home: true
+
+  communication_monitoring:
+    enabled: true
+    heartbeat_timeout: 5.0  # seconds
+    auto_land_on_loss: true
+
+  geofencing:
+    enabled: true
+    type: "cylinder"  # or "polygon"
+    center: [0, 0]  # relative to home
+    radius: 50  # meters
+    max_altitude: 5  # meters
+
+  emergency_procedures:
+    emergency_stop_deceleration: 5.0  # m/s²
+    auto_land_descent_rate: -0.5  # m/s
+    emergency_contact: "operator@company.com"

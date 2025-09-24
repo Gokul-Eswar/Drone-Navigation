@@ -1,0 +1,6 @@
+# Placeholder for Simulation Dockerfile.
+# This would be based on an image that includes Gazebo or another simulator,
+# in addition to ROS2 and the project code.
+FROM ubuntu:22.04
+
+RUN apt-get update && apt-get install -y git

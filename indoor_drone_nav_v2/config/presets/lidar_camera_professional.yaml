@@ -1,0 +1,6 @@
+# Placeholder for professional sensor configuration.
+sensors:
+  lidar:
+    enabled: true
+  camera:
+    enabled: true

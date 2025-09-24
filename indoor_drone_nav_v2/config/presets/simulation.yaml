@@ -1,0 +1,5 @@
+# Placeholder for simulation drone configuration.
+drone:
+  type: "simulation"
+  platform: "gazebo"
+  frame_type: "quadcopter"

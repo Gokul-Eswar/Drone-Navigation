@@ -1,0 +1,8 @@
+# Placeholder for commercial safety configuration.
+safety:
+  collision_avoidance:
+    enabled: true
+    min_obstacle_distance: 1.5
+  geofencing:
+    enabled: true
+    radius: 200

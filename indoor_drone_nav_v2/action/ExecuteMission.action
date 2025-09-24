@@ -1,0 +1,9 @@
+# Goal: the mission plan to execute
+indoor_drone_nav_v2/MissionPlan mission_plan
+---
+# Result: whether the mission was successful
+bool success
+---
+# Feedback: progress of the mission
+int32 current_waypoint_index
+string status
