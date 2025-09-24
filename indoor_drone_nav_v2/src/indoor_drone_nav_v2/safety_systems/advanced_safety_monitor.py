@@ -178,7 +178,7 @@ class WeatherMonitor(GenericSafetyModule): pass
 class EmergencyActionManager:
     """Manages emergency response procedures"""
 
-    def __init__(self, drone_interface: UniversalDroneInterface):
+    def __init__(self, drone_interface: Optional[UniversalDroneInterface]):
         self.drone_interface = drone_interface
         self.emergency_protocols = {
             'collision_imminent': self._collision_avoidance_protocol,
@@ -205,7 +205,9 @@ class EmergencyActionManager:
     async def execute_emergency_protocol(self, alerts: List[SafetyAlert]):
         """Execute appropriate emergency protocol"""
         # Execute only for the highest priority alert
-        if not alerts:
+        if not alerts or self.drone_interface is None:
+            if self.drone_interface is None:
+                print("[EmergencyActionManager] Drone interface not available. Cannot execute emergency protocol.")
             return
 
         highest_priority_alert = alerts[0]

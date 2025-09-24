@@ -44,6 +44,7 @@ setup(
             'drone_action_server_node = indoor_drone_nav_v2.drone_interfaces.drone_action_server_node:main',
             'gui_server_node = indoor_drone_nav_v2.gui_interface.mission_control_server:main',
             'mission_executor_node = indoor_drone_nav_v2.mission_planning.mission_executor_node:main',
+            'advanced_safety_monitor_node = indoor_drone_nav_v2.safety_systems.advanced_safety_monitor_node:main',
         ],
     },
 )

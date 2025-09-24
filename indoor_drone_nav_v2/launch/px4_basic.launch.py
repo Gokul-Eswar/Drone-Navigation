@@ -39,10 +39,19 @@ def generate_launch_description():
         output='screen'
     )
 
+    # Safety System
+    safety_monitor_node = Node(
+        package='indoor_drone_nav_v2',
+        executable='advanced_safety_monitor_node',
+        name='advanced_safety_monitor_node',
+        output='screen'
+    )
+
     return LaunchDescription([
         state_aggregator_node,
         action_server_node,
         mission_executor_node,
         gui_server_node,
+        safety_monitor_node,
         # In a complete system, other nodes for SLAM, safety, etc., would be added here.
     ])
