@@ -45,21 +45,59 @@ def generate_launch_description():
         output='screen'
     )
 
-    # Cartographer SLAM
-    cartographer_config_dir = os.path.join(get_package_share_directory('indoor_drone_nav_v2'), 'config', 'slam')
-    cartographer_node = Node(
-        package='cartographer_ros',
-        executable='cartographer_node',
-        name='cartographer_node',
-        output='screen',
-        arguments=[
-            '-configuration_directory', cartographer_config_dir,
-            '-configuration_basename', 'cartographer.lua'
-        ],
-        remappings=[
-            ('scan', '/scan'),
-            ('imu', '/imu')
-        ]
+    velocity_bridge_node = Node(
+        package='indoor_drone_nav_v2',
+        executable='velocity_bridge_node',
+        name='velocity_bridge_node',
+        output='screen'
+    )
+
+    # ML Modules
+    object_detection_node = Node(
+        package='indoor_drone_nav_v2',
+        executable='object_detection_node',
+        name='object_detection_node',
+        output='screen'
+    )
+
+    visual_servoing_node = Node(
+        package='indoor_drone_nav_v2',
+        executable='visual_servoing_node',
+        name='visual_servoing_node',
+        output='screen'
+    )
+
+    # RTAB-Map SLAM
+    rtabmap_launch_file = os.path.join(
+        get_package_share_directory('indoor_drone_nav_v2'),
+        'launch',
+        'rtabmap.launch.py'
+    )
+
+    rtabmap_node = IncludeLaunchDescription(
+        PythonLaunchDescriptionSource(rtabmap_launch_file)
+    )
+
+    # Nav2 Stack
+    nav2_launch_file = os.path.join(
+        get_package_share_directory('indoor_drone_nav_v2'),
+        'launch',
+        'nav2.launch.py'
+    )
+
+    nav2_node = IncludeLaunchDescription(
+        PythonLaunchDescriptionSource(nav2_launch_file)
+    )
+
+    # Control System
+    control_launch_file = os.path.join(
+        get_package_share_directory('indoor_drone_nav_v2'),
+        'launch',
+        'control.launch.py'
+    )
+
+    control_node = IncludeLaunchDescription(
+        PythonLaunchDescriptionSource(control_launch_file)
     )
 
     # Extended Kalman Filter for Sensor Fusion
@@ -76,9 +114,13 @@ def generate_launch_description():
     return LaunchDescription([
         state_aggregator_node,
         action_server_node,
+        velocity_bridge_node,
         mission_executor_node,
         gui_server_node,
-        cartographer_node,
+        object_detection_node,
+        visual_servoing_node,
+        rtabmap_node,
+        nav2_node,
+        control_node,
         ekf_node,
-        # In a complete system, other nodes for SLAM, safety, etc., would be added here.
     ])

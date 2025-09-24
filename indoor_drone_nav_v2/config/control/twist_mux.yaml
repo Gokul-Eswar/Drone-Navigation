@@ -1,0 +1,40 @@
+# Configuration for the twist_mux
+twist_mux:
+  ros__parameters:
+    # The output topic for the arbitrated velocity commands
+    cmd_vel_out: "/cmd_vel_out"
+
+    # Define the input topics
+    topics:
+      # Joystick input - highest priority
+      joy:
+        topic: "/cmd_vel/joy"
+        timeout: 0.5
+        priority: 100
+
+      # Navigation stack input
+      nav:
+        topic: "/cmd_vel/nav"
+        timeout: 0.5
+        priority: 10
+
+      # Visual servoing input
+      servo:
+        topic: "/cmd_vel/servo"
+        timeout: 0.5
+        priority: 20 # Higher than nav, so it can override for fine-tuning
+
+      # Goto action input
+      goto:
+        topic: "/cmd_vel/goto"
+        timeout: 0.5
+        priority: 30
+
+    # Define locks
+    # If a message is received on the 'joy' topic, it will lock out all
+    # topics with a priority less than 100 for 1 second.
+    locks:
+      -
+        topic: "/cmd_vel/joy"
+        timeout: 1.0
+        priority: 100
