@@ -2,7 +2,7 @@ ekf_filter_node:
     ros__parameters:
         frequency: 30.0
         sensor_timeout: 0.1
-        two_d_mode: true
+        two_d_mode: false # Changed to false for 3D drone flight
         transform_time_offset: 0.0
         transform_timeout: 0.0
         print_diagnostics: true
@@ -13,18 +13,18 @@ ekf_filter_node:
         base_link_frame: base_link
         world_frame: odom
 
-        # Odometry from Cartographer
-        odom0: /odom
+        # Visual Odometry from MAVROS (e.g., from a T265 camera)
+        odom0: /mavros/odometry/in
         odom0_config:
-            [true,  true,  false,
-             false, false, true,
-             true,  false, false,
-             false, false, true,
+            [true,  true,  true,
+             false, false, false,
+             false, false, false,
+             false, false, false,
              false, false, false]
         odom0_differential: false
 
         # IMU data from the flight controller
-        imu0: /imu
+        imu0: /mavros/imu/data
         imu0_config:
             [false, false, false,
              true,  true,  true,

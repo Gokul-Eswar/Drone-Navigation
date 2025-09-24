@@ -6,6 +6,7 @@ from mavros_msgs.msg import State as MavrosState
 from geometry_msgs.msg import PoseStamped, TwistStamped
 from sensor_msgs.msg import BatteryState
 from nav_msgs.msg import Odometry
+from geometry_msgs.msg import TwistStamped
 
 # Import our custom message type
 # This will be available after the workspace is built with `colcon build`
@@ -30,6 +31,7 @@ class StateAggregatorNode(Node):
         # Subscribe to other MAVROS topics
         self.create_subscription(MavrosState, '/mavros/state', self._mavros_state_callback, 10)
         self.create_subscription(BatteryState, '/mavros/battery', self._battery_callback, 10)
+        self.create_subscription(TwistStamped, '/mavros/local_position/velocity_local', self._velocity_callback, 10)
         self.get_logger().info("Subscribers created.")
 
         # --- Publisher for the aggregated state ---
@@ -40,10 +42,13 @@ class StateAggregatorNode(Node):
         self.publish_timer = self.create_timer(1.0 / 20.0, self._publish_state) # 20Hz
 
     def _odometry_callback(self, msg: Odometry):
-        """Update pose, velocity, and header information from the EKF."""
+        """Update pose and header information from the EKF."""
         self._drone_state.header = msg.header
         self._drone_state.pose = msg.pose.pose
-        self._drone_state.velocity = msg.twist.twist
+
+    def _velocity_callback(self, msg: TwistStamped):
+        """Update velocity information from MAVROS."""
+        self._drone_state.velocity = msg.twist
 
     def _mavros_state_callback(self, msg: MavrosState):
         """Update armed status, connection status, and flight mode."""
