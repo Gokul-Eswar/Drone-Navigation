@@ -1,0 +1,31 @@
+# Configuration for slam_toolbox
+slam_toolbox:
+  ros__parameters:
+    # Basic parameters
+    solver_plugin: "trust_levenberg_marquardt"
+    odom_frame: "odom"
+    map_frame: "map"
+    base_frame: "base_link"
+    scan_topic: "/scan"
+
+    # Ceres Scan Matcher parameters
+    ceres_scan_matcher:
+      occupied_space_weight: 1.0
+      translation_weight: 10.0
+      rotation_weight: 40.0
+      ceres_solver_options:
+        use_nonmonotonic_steps: false
+        max_num_iterations: 20
+        num_threads: 1
+
+    # Other parameters
+    map_update_interval: 5.0
+    resolution: 0.05
+    max_laser_range: 8.0
+    minimum_time_interval: 0.5
+    transform_timeout: 0.2
+    tf_buffer_duration: 30.0
+    use_scan_matching: true
+    use_map_saving: true
+    map_file_name: "saved_map"
+    mode: "localization" # Can be "mapping" or "localization"

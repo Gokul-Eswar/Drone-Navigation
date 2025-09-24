@@ -16,11 +16,13 @@ rosidl_generate_interfaces(${PROJECT_NAME}
   "msg/DroneState.msg"
   "msg/Waypoint.msg"
   "msg/MissionPlan.msg"
+  "msg/BoundingBox.msg"
   "action/Arm.action"
   "action/Takeoff.action"
   "action/Land.action"
   "action/GotoPosition.action"
   "action/ExecuteMission.action"
+  "action/GetPath.action"
   DEPENDENCIES geometry_msgs std_msgs
 )
 

@@ -5,9 +5,9 @@ This guide provides information for developers working on the Indoor Drone Navig
 ## 1. Code Structure
 The source code is located in the `src/indoor_drone_nav_v2` directory.
 
-- `core/`: Core algorithms for SLAM, path planning, etc.
+- `core/`: Core algorithms for path planning, etc.
 - `drone_interfaces/`: Abstraction layer for communicating with different drones.
-- `sensor_processing/`: Nodes for processing data from various sensors.
+- `sensor_processing/`: Nodes for processing data from various sensors. The SLAM system is integrated at this level.
 - `safety_systems/`: Safety monitoring and emergency response systems.
 - `mission_planning/`: Intelligent mission planning and optimization.
 - `gui_interface/`: The FastAPI web server for the GUI.
@@ -21,10 +21,9 @@ colcon build
 ```
 
 ## 3. Running Tests
-Tests are located in the `testing_framework` directory. To run the tests, use `pytest`:
-```bash
-pytest testing_framework/
-```
+The project contains unit and integration tests.
+- **Unit Tests:** `pytest testing_framework/unit_tests/`
+- **Integration Tests:** `colcon test --packages-select indoor_drone_nav_v2`
 
 ## 4. Contributing
 1. Create a new branch for your feature or bug fix.
