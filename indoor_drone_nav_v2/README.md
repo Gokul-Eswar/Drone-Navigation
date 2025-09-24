@@ -44,6 +44,41 @@ The system is designed as a set of communicating ROS2 nodes (microservices), pro
 
 ---
 
+## 🔧 System Modules In-Depth
+
+This section provides details on the intended functionality of each major module in the `src/indoor_drone_nav_v2` directory.
+
+*   **`/core`**: Contains the fundamental, non-ROS-specific algorithms.
+    *   `slam_engine`: Placeholder for advanced SLAM algorithms (VIO, LIO).
+    *   `path_planner`: Placeholder for global and local path planning algorithms.
+
+*   **`/drone_interfaces`**: The ROS2 layer for drone communication.
+    *   `state_aggregator_node.py`: Subscribes to MAVROS and publishes a clean `/indoor_drone/state`.
+    *   `drone_action_server_node.py`: Provides high-level ROS2 Actions for drone control.
+    *   `mavros_interface.py`: A Python client library for easily interacting with the action servers.
+
+*   **`/mission_planning`**: Handles high-level mission logic.
+    *   `intelligent_mission_planner.py`: Contains classes for generating waypoints and optimizing mission paths.
+    *   `mission_executor_node.py`: A ROS2 node that executes mission plans.
+
+*   **`/safety_systems`**:
+    *   `advanced_safety_monitor.py`: A placeholder for a system that would integrate various safety checks like collision prediction and human detection.
+
+*   **`/gui_interface`**:
+    *   `mission_control_server.py`: A ROS2 node that runs the FastAPI web server, bridging the web UI with the ROS2 system.
+
+---
+
+## ⚙️ Configuration System
+
+The system uses YAML files located in the `/config` directory.
+
+*   **`/config/presets`**: Contains complete configuration files for different setups (e.g., `px4_quadcopter_basic.yaml`, `standard_safety.yaml`).
+*   **`/config/[drones|sensors|etc.]`**: These directories hold the *active* configuration files.
+*   **`scripts/quick_start.py`**: This script works by copying the desired presets into the active configuration directories. For example, running with `--setup px4_basic` will copy the `px4_quadcopter_basic.yaml` preset to `config/drones/active.yaml`.
+
+---
+
 ## 🚀 Getting Started
 
 ### 1. Prerequisites
@@ -93,7 +128,21 @@ The action-based architecture allows you to control the drone directly from the 
 
 ---
 
-## 🔧 For Developers
+## 🐳 Deployment with Docker
+
+This project includes a Docker-based deployment system for reproducibility.
+
+*   **`Dockerfile.jetson_nano`**: Builds a container with optimizations for NVIDIA Jetson Nano.
+*   **`Dockerfile.desktop`**: A placeholder for a standard desktop build.
+*   **`docker-compose.yml`**: Orchestrates the services. To run the system with Docker (mock hardware access):
+    ```bash
+    # This will build and run the 'indoor_drone_nav' service
+    docker-compose up indoor_drone_nav
+    ```
+
+---
+
+## 💻 For Developers
 
 *   **Adding a new action:** Define a new `.action` file in the `/action` directory, add it to `CMakeLists.txt`, rebuild the workspace with `colcon build`, and then implement the server logic in `drone_action_server_node.py`.
 *   **Running Tests:** The unit tests are located in `/testing_framework/unit_tests`. You can run them with `pytest`:
