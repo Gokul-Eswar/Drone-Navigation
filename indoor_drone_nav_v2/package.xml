@@ -20,6 +20,7 @@
   <depend>slam_toolbox</depend>
   <depend>rtabmap_ros</depend>
   <depend>nav2_bringup</depend>
+  <depend>twist_mux</depend>
   <depend>cartographer_ros</depend>
   <depend>robot_localization</depend>
 

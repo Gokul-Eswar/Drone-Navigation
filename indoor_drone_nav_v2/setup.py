@@ -49,6 +49,7 @@ setup(
             'path_planner_node = indoor_drone_nav_v2.mission_planning.path_planner_node:main',
             'object_detection_node = indoor_drone_nav_v2.ml_modules.object_detection_node:main',
             'visual_servoing_node = indoor_drone_nav_v2.ml_modules.visual_servoing_node:main',
+            'velocity_bridge_node = indoor_drone_nav_v2.drone_interfaces.velocity_bridge_node:main',
         ],
     },
 )

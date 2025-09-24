@@ -12,7 +12,7 @@ class VisualServoingNode(Node):
         self.get_logger().info("Visual Servoing Node starting...")
 
         # Publisher for velocity commands
-        self.cmd_vel_publisher = self.create_publisher(Twist, '/cmd_vel', 10)
+        self.cmd_vel_publisher = self.create_publisher(Twist, '/cmd_vel/servo', 10)
 
         # Subscriber for the bounding box
         self.bbox_subscriber = self.create_subscription(

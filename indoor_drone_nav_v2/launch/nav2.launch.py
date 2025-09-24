@@ -17,6 +17,9 @@ def generate_launch_description():
     # Get the path to the custom Nav2 parameters file
     nav2_params_file = os.path.join(pkg_share, 'config', 'nav2', 'nav2.yaml')
 
+    # Define the remapping
+    remappings = [('/cmd_vel', '/cmd_vel/nav')]
+
     return LaunchDescription([
         IncludeLaunchDescription(
             PythonLaunchDescriptionSource(
@@ -29,5 +32,6 @@ def generate_launch_description():
                 'autostart': 'true',
                 'use_composition': 'true'
             }.items(),
+            remappings=remappings
         )
     ])

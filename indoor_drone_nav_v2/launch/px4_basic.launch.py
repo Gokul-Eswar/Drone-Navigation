@@ -29,6 +29,13 @@ def generate_launch_description():
         output='screen'
     )
 
+    velocity_bridge_node = Node(
+        package='indoor_drone_nav_v2',
+        executable='velocity_bridge_node',
+        name='velocity_bridge_node',
+        output='screen'
+    )
+
     # Mission Execution
     mission_executor_node = Node(
         package='indoor_drone_nav_v2',
@@ -67,6 +74,17 @@ def generate_launch_description():
         PythonLaunchDescriptionSource(nav2_launch_file)
     )
 
+    # Control System
+    control_launch_file = os.path.join(
+        get_package_share_directory('indoor_drone_nav_v2'),
+        'launch',
+        'control.launch.py'
+    )
+
+    control_node = IncludeLaunchDescription(
+        PythonLaunchDescriptionSource(control_launch_file)
+    )
+
     # Extended Kalman Filter for Sensor Fusion
     ekf_config_file = os.path.join(get_package_share_directory('indoor_drone_nav_v2'), 'config', 'ekf', 'ekf.yaml')
     ekf_node = Node(
@@ -81,10 +99,12 @@ def generate_launch_description():
     return LaunchDescription([
         state_aggregator_node,
         action_server_node,
+        velocity_bridge_node,
         mission_executor_node,
         gui_server_node,
         rtabmap_node,
         nav2_node,
+        control_node,
         ekf_node,
         # In a complete system, other nodes for SLAM, safety, etc., would be added here.
     ])
