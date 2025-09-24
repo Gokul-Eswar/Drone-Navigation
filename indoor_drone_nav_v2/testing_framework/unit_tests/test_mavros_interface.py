@@ -8,142 +8,132 @@ import sys
 import os
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '../../../src')))
 
-
-# We need to initialize rclpy for the node to be created
 import rclpy
-rclpy.init()
+from rclpy.node import Node
+from rclpy.action import ActionClient
 
 from indoor_drone_nav_v2.drone_interfaces.mavros_interface import MAVROSInterface
-from mavros_msgs.srv import CommandBool, SetMode
+from indoor_drone_nav_v2.action import Arm, Takeoff, Land, GotoPosition
+from indoor_drone_nav_v2.msg import DroneState
 from geometry_msgs.msg import PoseStamped
 
+@pytest.fixture
+def mock_node():
+    """Fixture to create a mock rclpy Node."""
+    if not rclpy.ok():
+        rclpy.init()
+    node = Node('mock_testing_node')
+    yield node
+    node.destroy_node()
+    if rclpy.ok():
+        rclpy.shutdown()
 
 @pytest.fixture
-def mavros_interface_node():
+def mavros_client(mock_node):
     """
-    Fixture to create a MAVROSInterface node instance for testing.
-    It uses patching to prevent the node from actually creating ROS2 entities,
-    allowing us to test the logic in isolation.
+    Fixture to create an instance of our MAVROSInterface client library.
+    It patches the ActionClient to avoid real ROS2 communication.
     """
-    with patch('rclpy.node.Node.create_subscription'), \
-         patch('rclpy.node.Node.create_publisher', return_value=MagicMock(spec=['publish'])), \
-         patch('rclpy.node.Node.create_client') as mock_create_client, \
-         patch('rclpy.node.Node.create_timer'):
+    with patch('rclpy.action.ActionClient') as MockActionClient:
+        # Set up the mock to return a specific AsyncMock instance for each client
+        mock_arm_client = AsyncMock(spec=ActionClient)
+        mock_takeoff_client = AsyncMock(spec=ActionClient)
+        mock_land_client = AsyncMock(spec=ActionClient)
+        mock_goto_client = AsyncMock(spec=ActionClient)
 
-        node = MAVROSInterface(config={})
+        # When ActionClient is called, return the correct mock based on the action name
+        def side_effect(node, action_type, action_name):
+            if action_name == 'drone/arm': return mock_arm_client
+            if action_name == 'drone/takeoff': return mock_takeoff_client
+            if action_name == 'drone/land': return mock_land_client
+            if action_name == 'drone/goto_position': return mock_goto_client
+            return AsyncMock()
 
-        # Manually attach mock clients to the instance for manipulation in tests
-        node.arming_client = AsyncMock(spec=node.create_client(CommandBool, '').__class__)
-        node.set_mode_client = AsyncMock(spec=node.create_client(SetMode, '').__class__)
-        node.takeoff_client = AsyncMock()
-        node.land_client = AsyncMock()
+        MockActionClient.side_effect = side_effect
 
-        # Mock the publisher
-        node.setpoint_publisher = MagicMock(spec=['publish'])
+        client = MAVROSInterface(node=mock_node)
+        yield client
 
-        yield node
+async def configure_mock_action_client(mock_client, success=True):
+    """Helper function to configure a mock action client for a successful run."""
+    mock_client.wait_for_server.return_value = True
 
-    # We need to destroy the node manually after the test
-    if rclpy.ok():
-        node.destroy_node()
+    mock_goal_handle = AsyncMock()
+    mock_goal_handle.accepted = True
 
+    # The result of get_result_async is a "result" object that has its own "result" attribute
+    action_type = mock_client.action_type
+    result_message = action_type.Result()
+    result_message.success = success
 
-@pytest.mark.asyncio
-async def test_connect_success(mavros_interface_node: MAVROSInterface):
-    """Test the connect method for a successful connection."""
-    node = mavros_interface_node
-    # Simulate a successful connection by setting the state before calling
-    node.state.connected = True
-    assert await node.connect() is True
+    result_future = asyncio.Future()
+    result_future.set_result(MagicMock(result=result_message))
+    mock_goal_handle.get_result_async.return_value = result_future
 
-@pytest.mark.asyncio
-async def test_connect_failure(mavros_interface_node: MAVROSInterface):
-    """Test the connect method for a failed connection (times out)."""
-    node = mavros_interface_node
-    node.state.connected = False # Ensure it starts as not connected
-    assert await node.connect() is False
+    send_goal_future = asyncio.Future()
+    send_goal_future.set_result(mock_goal_handle)
+    mock_client.send_goal_async.return_value = send_goal_future
 
-@pytest.mark.asyncio
-async def test_arm_success(mavros_interface_node: MAVROSInterface):
-    """Test the arm method for a successful arming call."""
-    node = mavros_interface_node
-
-    # Configure the mock service client
-    node.arming_client.wait_for_service.return_value = True
-    future = asyncio.Future()
-    future.set_result(CommandBool.Response(success=True))
-    node.arming_client.call_async.return_value = future
-
-    # In a real scenario, the state would update via callback. We simulate it.
-    async def state_updater():
-        await asyncio.sleep(0.05)
-        node.state.armed = True
-
-    # Run both the method and the state updater concurrently
-    results = await asyncio.gather(node.arm(), state_updater())
-
-    assert results[0] is True # The arm() method should return True
-    node.arming_client.call_async.assert_called_once()
-    assert node.arming_client.call_async.call_args[0][0].value is True
 
 @pytest.mark.asyncio
-async def test_set_mode_success(mavros_interface_node: MAVROSInterface):
-    """Test setting the flight mode successfully."""
-    node = mavros_interface_node
-    node.set_mode_client.wait_for_service.return_value = True
+async def test_arm_calls_action_client(mavros_client: MAVROSInterface):
+    """Test that the arm() method correctly calls the arm action client."""
+    mock_client = mavros_client.arm_client
+    await configure_mock_action_client(mock_client, success=True)
 
-    future = asyncio.Future()
-    future.set_result(SetMode.Response(mode_sent=True))
-    node.set_mode_client.call_async.return_value = future
+    # Call the method we are testing
+    result = await mavros_client.arm()
 
-    # Simulate state update via callback
-    async def state_updater():
-        await asyncio.sleep(0.05)
-        node.state.flight_mode = "OFFBOARD"
-
-    # Run concurrently and check the result of the set_mode call
-    results = await asyncio.gather(node.set_mode("OFFBOARD"), state_updater())
-    assert results[0] is True
-    node.set_mode_client.call_async.assert_called_once_with(SetMode.Request(custom_mode="OFFBOARD"))
-
-@pytest.mark.asyncio
-async def test_goto_position_updates_target_and_starts_timer(mavros_interface_node: MAVROSInterface):
-    """Test that goto_position updates the target pose and starts the setpoint timer."""
-    node = mavros_interface_node
-
-    # Mock the timer to check if it's managed correctly
-    node.setpoint_timer = MagicMock(spec=['is_canceled', 'reset', 'cancel'])
-    node.setpoint_timer.is_canceled.return_value = True
-
-    # Mock dependencies for a successful run (already armed and in offboard)
-    node.state.armed = True
-    node.state.flight_mode = "OFFBOARD"
-
-    # Call the method
-    result = await node.goto_position(5.0, 6.0, 7.0)
-
-    # Assertions
     assert result is True
-    assert node._target_pose.pose.position.x == 5.0
-    assert node._target_pose.pose.position.y == 6.0
-    assert node._target_pose.pose.position.z == 7.0
-    node.setpoint_timer.reset.assert_called_once()
+    mock_client.send_goal_async.assert_called_once()
+    sent_goal = mock_client.send_goal_async.call_args[0][0]
+    assert isinstance(sent_goal, Arm.Goal)
+    assert sent_goal.arm is True
 
 @pytest.mark.asyncio
-async def test_setpoint_callback_publishes(mavros_interface_node: MAVROSInterface):
-    """Test that the setpoint callback publishes a message."""
-    node = mavros_interface_node
+async def test_takeoff_calls_action_client(mavros_client: MAVROSInterface):
+    """Test that the takeoff() method correctly calls the takeoff action client."""
+    mock_client = mavros_client.takeoff_client
+    await configure_mock_action_client(mock_client, success=True)
 
-    # Set a target pose
-    node._target_pose.pose.position.x = 1.0
+    result = await mavros_client.takeoff(altitude=5.0)
 
-    # Call the callback
-    node._setpoint_callback()
+    assert result is True
+    mock_client.send_goal_async.assert_called_once()
+    sent_goal = mock_client.send_goal_async.call_args[0][0]
+    assert isinstance(sent_goal, Takeoff.Goal)
+    assert sent_goal.altitude == 5.0
 
-    # Check that publish was called
-    node.setpoint_publisher.publish.assert_called_once()
+@pytest.mark.asyncio
+async def test_goto_position_calls_action_client(mavros_client: MAVROSInterface):
+    """Test that goto_position() correctly calls the goto_position action client."""
+    mock_client = mavros_client.goto_position_client
+    await configure_mock_action_client(mock_client, success=True)
 
-    # Check that the message has the correct data
-    sent_pose = node.setpoint_publisher.publish.call_args[0][0]
-    assert isinstance(sent_pose, PoseStamped)
-    assert sent_pose.pose.position.x == 1.0
+    result = await mavros_client.goto_position(x=1.0, y=2.0, z=3.0)
+
+    assert result is True
+    mock_client.send_goal_async.assert_called_once()
+    sent_goal = mock_client.send_goal_async.call_args[0][0]
+    assert isinstance(sent_goal, GotoPosition.Goal)
+    assert sent_goal.target_pose.pose.position.x == 1.0
+    assert sent_goal.target_pose.pose.position.y == 2.0
+    assert sent_goal.target_pose.pose.position.z == 3.0
+
+@pytest.mark.asyncio
+async def test_state_callback_updates_state(mavros_client: MAVROSInterface):
+    """Test that the state callback correctly updates the internal state."""
+
+    # Create a mock DroneState message
+    msg = DroneState()
+    msg.armed = True
+    msg.flight_mode = "OFFBOARD"
+    msg.pose.position.x = 10.0
+
+    # Call the callback directly
+    mavros_client._state_callback(msg)
+
+    # Check that the client's state object was updated
+    assert mavros_client.state.armed is True
+    assert mavros_client.state.flight_mode == "OFFBOARD"
+    assert mavros_client.state.position[0] == 10.0

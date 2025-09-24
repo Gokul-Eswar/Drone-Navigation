@@ -1,40 +1,48 @@
 from launch import LaunchDescription
-from launch.actions import IncludeLaunchDescription
-from launch.launch_description_sources import PythonLaunchDescriptionSource
-from launch.substitutions import PathJoinSubstitution
-from launch_ros.substitutions import FindPackageShare
+from launch_ros.actions import Node
 
 def generate_launch_description():
     """
-    Launch file for a basic PX4 configuration.
-    This launch file includes the master_launch.py file with specific arguments
-    for the PX4 setup.
+    Top-level launch file for the Indoor Drone Navigation System.
+    This launch file starts all the necessary nodes for a basic PX4 setup,
+    based on the refactored microservice architecture.
     """
 
-    # Find the package share directory
-    pkg_share = FindPackageShare('indoor_drone_nav_v2')
+    # Drone Interface Microservices
+    state_aggregator_node = Node(
+        package='indoor_drone_nav_v2',
+        executable='state_aggregator_node',
+        name='state_aggregator_node',
+        output='screen'
+    )
 
-    # Path to the master launch file
-    master_launch_file = PathJoinSubstitution([
-        pkg_share, 'launch', 'master_launch.py'
-    ])
+    action_server_node = Node(
+        package='indoor_drone_nav_v2',
+        executable='drone_action_server_node',
+        name='drone_action_server_node',
+        output='screen'
+    )
 
-    # Arguments to pass to the master launch file
-    launch_arguments = {
-        'drone_config': 'px4_quadcopter_basic.yaml',
-        'sensor_config': 'camera_imu_basic.yaml',
-        'safety_config': 'standard_safety.yaml',
-        'navigation_config': 'basic_navigation.yaml', # Assuming there's a nav config
-        'simulation': 'false',
-        'gui': 'true'
-    }
+    # Mission Execution
+    mission_executor_node = Node(
+        package='indoor_drone_nav_v2',
+        executable='mission_executor_node',
+        name='mission_executor_node',
+        output='screen'
+    )
 
-    # Include the master launch file with the specified arguments
-    master_launch = IncludeLaunchDescription(
-        PythonLaunchDescriptionSource(master_launch_file),
-        launch_arguments=launch_arguments.items()
+    # GUI Server
+    gui_server_node = Node(
+        package='indoor_drone_nav_v2',
+        executable='gui_server_node',
+        name='gui_server_node',
+        output='screen'
     )
 
     return LaunchDescription([
-        master_launch
+        state_aggregator_node,
+        action_server_node,
+        mission_executor_node,
+        gui_server_node,
+        # In a complete system, other nodes for SLAM, safety, etc., would be added here.
     ])

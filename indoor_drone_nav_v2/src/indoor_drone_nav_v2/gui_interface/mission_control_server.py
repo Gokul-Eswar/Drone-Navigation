@@ -1,177 +1,130 @@
+import rclpy
+from rclpy.node import Node
+from rclpy.executors import MultiThreadedExecutor
+import asyncio
+import threading
+import uvicorn
+import json
+from typing import List
+
 from fastapi import FastAPI, WebSocket, HTTPException, Request
-from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from fastapi.responses import HTMLResponse
-import asyncio
-import json
-from typing import Dict, List, Any
 
-# Assuming these are in the correct path relative to src
-from ..mission_planning.intelligent_mission_planner import IntelligentMissionPlanner, MissionPlan
-from ..drone_interfaces.universal_interface import MAVROSInterface, UniversalDroneInterface
-from ..safety_systems.advanced_safety_monitor import AdvancedSafetyMonitor
+from ..drone_interfaces.mavros_interface import MAVROSInterface
+from ..msg import DroneState
 
-# --- Placeholder/Mock Implementations ---
+# --- Shared State & FastAPI App ---
+# We create a simple class to hold state that needs to be shared
+# between the ROS2 node thread and the FastAPI server thread.
+class SharedState:
+    def __init__(self):
+        self.mavros_interface: MAVROSInterface = None
+        self.active_connections: List[WebSocket] = []
+        self.main_event_loop = None
 
-class MissionExecutor:
-    def __init__(self, drone_interface: UniversalDroneInterface, mission_planner: IntelligentMissionPlanner):
-        self.drone_interface = drone_interface
-        self.mission_planner = mission_planner
-        self.current_mission_plan: Optional[MissionPlan] = None
-        self.is_running = False
-
-    async def start_mission(self, mission_id: str, mission_plan: MissionPlan) -> bool:
-        if self.is_running:
-            print("A mission is already running.")
-            return False
-
-        print(f"Starting mission {mission_id}...")
-        self.current_mission_plan = mission_plan
-        self.is_running = True
-
-        # Simulate mission execution
-        for i, waypoint in enumerate(self.current_mission_plan.waypoints):
-            if not self.is_running:
-                print("Mission aborted.")
-                break
-            print(f"Executing waypoint {i+1}/{len(self.current_mission_plan.waypoints)}: moving to {waypoint.position}")
-            await self.drone_interface.goto_position(*waypoint.position)
-            await asyncio.sleep(waypoint.dwell_time)
-
-        print(f"Mission {mission_id} completed.")
-        self.is_running = False
-        return True
-
-    def stop_mission(self):
-        self.is_running = False
-
-class MapManager:
-    async def get_available_maps(self) -> List[str]:
-        print("Fetching available maps...")
-        return ["map1.yaml", "map2.pgm", "office_level_1.json"]
-
-async def process_gui_command(command: Dict) -> Dict:
-    print(f"Processing GUI command: {command}")
-    action = command.get("action")
-    if action == "takeoff":
-        await drone_interface.takeoff()
-        return {"status": "success", "message": "Takeoff initiated"}
-    elif action == "land":
-        await drone_interface.land()
-        return {"status": "success", "message": "Landing initiated"}
-    elif action == "emergency_stop":
-        await emergency_stop()
-        return {"status": "success", "message": "Emergency stop initiated"}
-    return {"status": "unknown_command"}
-
-
-# --- FastAPI Application Setup ---
-
+shared_state = SharedState()
 app = FastAPI(title="Indoor Drone Navigation Control")
-
-# Note: The paths are relative to the project root where the server is expected to be run
-app.mount("/static", StaticFiles(directory="gui_interface/web_gui/static"), name="static")
+# Note: The paths are relative to where the server is run from,
+# which will be the workspace root (e.g., `ros2 run ...`).
+# `setup.py` installs these files to `share/`, so we need to adjust this later if needed.
 templates = Jinja2Templates(directory="gui_interface/web_gui/templates")
 
-# --- Global instances of core components ---
-config = {}
-drone_interface = MAVROSInterface(config)
-mission_planner = IntelligentMissionPlanner(config)
-safety_monitor = AdvancedSafetyMonitor(config, drone_interface)
-mission_executor = MissionExecutor(drone_interface, mission_planner)
-map_manager = MapManager()
-active_connections: List[WebSocket] = []
-mission_plan_storage: Dict[str, MissionPlan] = {}
-
-
-# --- WebSocket Communication ---
-
-async def broadcast_drone_status():
-    """Periodically broadcasts drone status to all connected clients."""
-    while True:
-        await asyncio.sleep(1)
-
-        message = {
-            'type': 'drone_status',
-            'data': drone_interface.get_state().__dict__
-        }
-
-        for connection in active_connections[:]:
-            try:
-                await connection.send_text(json.dumps(message, default=str))
-            except Exception:
-                active_connections.remove(connection)
-
-@app.on_event("startup")
-async def startup_event():
-    asyncio.create_task(broadcast_drone_status())
-    await drone_interface.connect()
-
-
+# --- FastAPI Endpoints ---
 @app.websocket("/ws")
 async def websocket_endpoint(websocket: WebSocket):
-    """WebSocket endpoint for real-time communication"""
     await websocket.accept()
-    active_connections.append(websocket)
-
+    shared_state.active_connections.append(websocket)
     try:
         while True:
-            data = await websocket.receive_text()
-            command = json.loads(data)
-            response = await process_gui_command(command)
-            await websocket.send_text(json.dumps(response))
+            await websocket.receive_text() # Just keep connection open
     except Exception:
         pass
     finally:
-        if websocket in active_connections:
-            active_connections.remove(websocket)
-
-
-# --- REST API Endpoints ---
+        if websocket in shared_state.active_connections:
+            shared_state.active_connections.remove(websocket)
 
 @app.get("/", response_class=HTMLResponse)
 async def dashboard(request: Request):
-    """Main dashboard page"""
     return templates.TemplateResponse("dashboard.html", {"request": request})
 
-@app.post("/api/missions")
-async def create_mission(mission_data: Dict):
-    """Create new mission via REST API"""
-    try:
-        plan = await mission_planner.plan_mission(mission_data)
-        mission_plan_storage[plan.mission_id] = plan
-        return {"status": "success", "mission_id": plan.mission_id}
-    except Exception as e:
-        raise HTTPException(status_code=400, detail=str(e))
+# Define API endpoints for each drone action
+@app.post("/api/arm")
+async def arm():
+    if shared_state.mavros_interface:
+        await shared_state.mavros_interface.arm()
+        return {"status": "arm goal sent"}
+    raise HTTPException(status_code=503, detail="Drone interface not available.")
 
-@app.post("/api/missions/{mission_id}/start")
-async def start_mission(mission_id: str):
-    """Start execution of planned mission"""
-    plan = mission_plan_storage.get(mission_id)
-    if not plan:
-        raise HTTPException(status_code=404, detail="Mission plan not found.")
+@app.post("/api/takeoff")
+async def takeoff(request: Request):
+    data = await request.json()
+    altitude = data.get("altitude", 1.5)
+    if shared_state.mavros_interface:
+        await shared_state.mavros_interface.takeoff(altitude)
+        return {"status": "takeoff goal sent"}
+    raise HTTPException(status_code=503, detail="Drone interface not available.")
 
-    try:
-        asyncio.create_task(mission_executor.start_mission(mission_id, plan))
-        return {"status": "success", "message": f"Mission {mission_id} started."}
-    except Exception as e:
-        raise HTTPException(status_code=400, detail=str(e))
+@app.post("/api/land")
+async def land():
+    if shared_state.mavros_interface:
+        await shared_state.mavros_interface.land()
+        return {"status": "land goal sent"}
+    raise HTTPException(status_code=503, detail="Drone interface not available.")
 
 @app.post("/api/emergency_stop")
 async def emergency_stop():
-    """Emergency stop all operations"""
-    try:
-        mission_executor.stop_mission()
-        await drone_interface.emergency_stop()
-        return {"status": "emergency_stop_executed"}
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+    if shared_state.mavros_interface:
+        await shared_state.mavros_interface.emergency_stop()
+        return {"status": "emergency stop goal sent"}
+    raise HTTPException(status_code=503, detail="Drone interface not available.")
 
-@app.get("/api/maps")
-async def get_available_maps():
-    """Get list of available maps"""
-    try:
-        maps = await map_manager.get_available_maps()
-        return {"maps": maps}
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+# --- ROS2 Node ---
+class GUIServerNode(Node):
+    def __init__(self):
+        super().__init__('gui_server_node')
+        self.get_logger().info("GUI Server Node starting up...")
+
+        shared_state.mavros_interface = MAVROSInterface(self)
+
+        self.create_subscription(DroneState, '/indoor_drone/state', self._state_broadcast_callback, 10)
+
+        self.server_thread = threading.Thread(target=self._run_server, daemon=True)
+        self.server_thread.start()
+
+    def _run_server(self):
+        loop = asyncio.new_event_loop()
+        asyncio.set_event_loop(loop)
+        shared_state.main_event_loop = loop
+        uvicorn.run(app, host="0.0.0.0", port=8080, log_level="info")
+
+    def _state_broadcast_callback(self, msg: DroneState):
+        if not shared_state.main_event_loop or not shared_state.active_connections:
+            return
+
+        message = {
+            'type': 'drone_status',
+            'data': {
+                'armed': msg.armed,
+                'flight_mode': msg.flight_mode,
+                'position': [msg.pose.position.x, msg.pose.position.y, msg.pose.position.z],
+                'battery_percentage': msg.battery_percentage,
+            }
+        }
+        json_message = json.dumps(message)
+
+        for ws in shared_state.active_connections:
+            # Use run_coroutine_threadsafe to schedule the async send in the other thread's event loop
+            asyncio.run_coroutine_threadsafe(ws.send_text(json_message), shared_state.main_event_loop)
+
+def main(args=None):
+    rclpy.init(args=args)
+    node = GUIServerNode()
+    # Use a MultiThreadedExecutor to handle the node's callbacks separately from the main spin
+    executor = MultiThreadedExecutor()
+    rclpy.spin(node, executor=executor)
+    node.destroy_node()
+    rclpy.shutdown()
+
+if __name__ == '__main__':
+    main()

@@ -8,6 +8,21 @@ endif()
 # find dependencies
 find_package(ament_cmake REQUIRED)
 find_package(ament_cmake_python REQUIRED)
+find_package(rosidl_default_generators REQUIRED)
+find_package(geometry_msgs REQUIRED)
+find_package(std_msgs REQUIRED)
+
+rosidl_generate_interfaces(${PROJECT_NAME}
+  "msg/DroneState.msg"
+  "msg/Waypoint.msg"
+  "msg/MissionPlan.msg"
+  "action/Arm.action"
+  "action/Takeoff.action"
+  "action/Land.action"
+  "action/GotoPosition.action"
+  "action/ExecuteMission.action"
+  DEPENDENCIES geometry_msgs std_msgs
+)
 
 # Declare the package to be a python package
 ament_python_install_package(src)

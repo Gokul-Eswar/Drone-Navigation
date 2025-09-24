@@ -40,8 +40,10 @@ setup(
     tests_require=['pytest'],
     entry_points={
         'console_scripts': [
-            # The scripts are installed to lib, so they can be run directly
-            # No entry points needed for them if they have a shebang and are executable.
+            'state_aggregator_node = indoor_drone_nav_v2.drone_interfaces.state_aggregator_node:main',
+            'drone_action_server_node = indoor_drone_nav_v2.drone_interfaces.drone_action_server_node:main',
+            'gui_server_node = indoor_drone_nav_v2.gui_interface.mission_control_server:main',
+            'mission_executor_node = indoor_drone_nav_v2.mission_planning.mission_executor_node:main',
         ],
     },
 )
