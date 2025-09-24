@@ -1,0 +1,116 @@
+TRAJECTORY_BUILDER = {
+  trajectory_builder_2d = {
+    use_imu_data = true,
+    min_range = 0.3,
+    max_range = 8.,
+    min_z = 0.1,
+    max_z = 0.8,
+    missing_data_ray_length = 5.,
+    num_accumulated_range_data = 1,
+    voxel_filter_size = 0.025,
+    adaptive_voxel_filter = {
+      max_length = 0.5,
+      min_num_points = 200,
+      max_range = 50.,
+    },
+    loop_closure_adaptive_voxel_filter = {
+      max_length = 0.9,
+      min_num_points = 100,
+      max_range = 50.,
+    },
+    use_online_correlative_scan_matching = true,
+    real_time_correlative_scan_matcher = {
+      linear_search_window = 0.1,
+      angular_search_window = math.rad(20.),
+      translation_delta_cost_weight = 1e-1,
+      rotation_delta_cost_weight = 1e-1,
+    },
+    ceres_scan_matcher = {
+      occupied_space_weight = 20.,
+      translation_weight = 10.,
+      rotation_weight = 1.,
+      ceres_solver_options = {
+        use_nonmonotonic_steps = true,
+        max_num_iterations = 10,
+        num_threads = 1,
+      },
+    },
+    motion_filter = {
+      max_time_seconds = 5.,
+      max_distance_meters = 0.2,
+      max_angle_radians = math.rad(1.),
+    },
+    imu_gravity_time_constant = 10.,
+    pose_extrapolator = {
+      use_imu_based = true,
+      constant_velocity = {
+        imu_gravity_time_constant = 10.,
+      },
+      imu_based = {
+        pose_queue_duration = 1.,
+        gravity_constant = 9.806,
+        pose_translation_weight = 1.,
+        pose_rotation_weight = 1.,
+        imu_acceleration_weight = 1.,
+        imu_rotation_weight = 1.,
+        odometry_translation_weight = 1.,
+        odometry_rotation_weight = 1.,
+      },
+    },
+  },
+  trajectory_builder_3d = {
+    num_accumulated_range_data = 1,
+    voxel_filter_size = 0.15,
+    high_resolution_adaptive_voxel_filter = {
+      max_length = 0.7,
+      min_num_points = 400,
+    },
+    low_resolution_adaptive_voxel_filter = {
+      max_length = 1.4,
+      min_num_points = 400,
+    },
+    use_online_correlative_scan_matching = false,
+    real_time_correlative_scan_matcher = {
+      linear_search_window = 0.2,
+      angular_search_window = math.rad(15.),
+      translation_delta_cost_weight = 10.,
+      rotation_delta_cost_weight = 10.,
+    },
+    ceres_scan_matcher = {
+      occupied_space_weight_0 = 5.,
+      occupied_space_weight_1 = 30.,
+      translation_weight = 10.,
+      rotation_weight = 1.,
+      only_optimize_yaw = false,
+      ceres_solver_options = {
+        use_nonmonotonic_steps = false,
+        max_num_iterations = 10,
+        num_threads = 1,
+      },
+    },
+    motion_filter = {
+      max_time_seconds = 5.,
+      max_distance_meters = 0.2,
+      max_angle_radians = math.rad(1.),
+    },
+    rotational_histogram_size = 120,
+    imu_gravity_time_constant = 10.,
+    pose_extrapolator = {
+      use_imu_based = true,
+      constant_velocity = {
+        imu_gravity_time_constant = 10.,
+      },
+      imu_based = {
+        pose_queue_duration = 5.,
+        gravity_constant = 9.806,
+        pose_translation_weight = 1.,
+        pose_rotation_weight = 1.,
+        imu_acceleration_weight = 1.,
+        imu_rotation_weight = 1.,
+        odometry_translation_weight = 1.,
+        odometry_rotation_weight = 1.,
+      },
+    },
+  },
+  collate_by_time = true,
+}
